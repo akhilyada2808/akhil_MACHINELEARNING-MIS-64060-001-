@@ -1,0 +1,34 @@
+---
+title: "assignemnt 1 ML"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+date: "2022-09-22"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r }
+ #1. Download a dataset from the web. You may use any source, but specify the source in
+# your code. Also ensure that the data has a mix of quantitative and qualitative
+# (categorical) variables.
+# 2. Import the dataset into R
+# I have taken the Cars Dataset Present in R .
+data("mtcars")
+
+
+# 3. Print out descriptive statistics for a selection of quantitative and categorical variables.
+head(mtcars)
+min(mtcars$hp)
+max(mtcars$qsec)
+summary(mtcars)
+# 4. Transform at least one variable. It doesn't matter what the transformation is.
+squareroot<-sqrt(mtcars$hp)
+print(squareroot)
+# 5. Plot at least one quantitative variable, and one scatterplot
+hist(mtcars$drat)
+plot(mtcars$hp, mtcars$qsec,main="scatter Plot for HorsePower vs Qsec")
+```
