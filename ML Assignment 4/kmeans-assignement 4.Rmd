@@ -1,0 +1,181 @@
+---
+title: "kmeans"
+author: "akhil yada"
+date: "2022-11-06"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+#loading the required packages 
+library(flexclust)
+library(cluster)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(factoextra)
+```
+
+```{r}
+
+pharma = read.csv("c:/Users/91773/Desktop/Pharmaceuticals.csv ")                             
+
+# I am selecting columns from 3 to 11 and storing the data in variable pharma1
+pharma1 <- pharma[3:11]
+# Using head function to display the first 6 rows of data
+head(pharma1)
+summary(pharma1)
+
+# We will scale the data in pharma1 and record the scaled data in the pharma2 dataframe because the variables are measured with varying weights throughout the rows.
+pharma2 <- scale(pharma1)
+colnames(is.na(pharma2))
+
+
+```
+
+
+
+
+
+```{r}
+wss =fviz_nbclust(pharma2,kmeans,method = "wss")
+wss
+```
+*The optimal k thereby received using the wss method is k = 2 *
+/newline
+
+```{r}
+silhouette = fviz_nbclust(pharma2,kmeans,method = "silhouette")
+silhouette
+```
+*whereas by employing the silhouette method the optimal k received was k = 5.*
+/newline
+
+*cluster formation using K-Means with k = 2 (WSS)*
+```{r}
+wss_kmeans <- kmeans(pharma2,centers = 2,nstart=25) # k = 2, number of restarts = 25
+wss_kmeans
+```
+*after WSS Method i got 2 clusters of size 11 and 10.*
+/newline
+*cluster formation using k-means with k=5 (silhouette)*
+```{r}
+silhouette_kmeans <- kmeans(pharma2,centers = 5,nstart = 25) # k = 5, number of restarts = 25
+silhouette_kmeans
+```
+*after silhouette method we got 5 clusters of size 4,2,3,8,4*
+
+
+*plot for cluster WSS*
+```{r}
+fviz_cluster(wss_kmeans,pharma2)
+```
+
+
+```{r}
+fviz_cluster(silhouette_kmeans,pharma2)
+```
+*for analysis binding the clusters result to the original data*
+```{r}
+
+# data formation for wss method
+wss_clusters = wss_kmeans$cluster
+
+silhouette_clusters = silhouette_kmeans$cluster
+
+
+
+
+```
+
+I noticed that the total sum of squares within the cluster for the Silhouette method is 62.35 (Sil k5$tot.withinss), which is smaller than 118.56 (Elb k2$tot.withinss), the value I obtained for the Elbow method. This observation helped me choose the appropriate k value for this data set.
+I like to use the Silhouette approach for this assignment because the sum of the squares within the cluster is lower and results in homogeneous clusters. Therefore, 5 is the ideal value for k.
+
+As opposed to Manhattan distance, I am here utilizing Euclidean distance to measure the distance between the data points because it represents the absolute difference between the data points.
+```{r}
+#b.interpretation 
+silhouette_clusters= as.data.frame(silhouette_clusters)
+silhouette_2 = cbind(pharma2,silhouette_clusters)
+cluster_mean = silhouette_2 %>% group_by(silhouette_clusters) %>% summarise_all("mean")
+cluster_mean
+
+```
+
+
+
+cluster 1
+This cluster has lower leverage than other clusters, which means that its companies are less indebted than those in those other clusters.
+Among all the clusters, this one has the lowest revenue growth, but the companies in it have greater net profit margins.The companies in this cluster are performing better than Clusters 2,3, and 5, when the other factors are included.
+cluster 2
+When compared to other clusters, this cluster's mean beta value is higher. This suggests that the companies in this cluster have more volatile stock prices.
+This cluster has the highest mean leverage, which suggests that these companies have a greater level of debt.
+Less Market Capital, ROA, Revenue Growth, and Net Profit Margin are displayed by the companies in this cluster. This suggests that these businesses must grow financially.
+
+cluster 3
+The net profit margin of the businesses in this cluster is the lowest. Additionally, this cluster has the lowest Return on Equity (ROE), indicating that the companies in this cluster struggle to turn equity investments into profits.
+Furthermore, this cluster has the highest Price-Earnings Ratio, a sign that the businesses are not making money.
+Even if these businesses' profits are falling, we can still see that their stocks are less volatile because this cluster has the lowest beta value.
+
+cluster 4
+The businesses in this cluster have the highest market capitalization, net profit margin, return on assets (ROA), return on equity (ROE), and asset turnover.
+The companies in this cluster have the lowest mean leverage values, which indicates that they have less debt relative to shareholders' equity.
+As a result, when compared to other clusters, this cluster has the highest performing businesses.
+
+cluster 5
+High revenue growth among the businesses in this cluster is an indication that business development is going as planned.
+The companies should, ideally, use their assets to boost revenue, which raises the asset turnover ratio. The asset turnover ratio for this cluster is the lowest, nevertheless.
+The fact that this group of businesses has the lowest price-to-earnings ratio suggests that their earnings are higher.
+
+```{r}
+library(hrbrthemes)
+
+pharma_6 = pharma[12:14]
+pharma_7 = cbind(pharma_6,silhouette_clusters)
+
+ggplot(pharma_7,aes(x=silhouette_clusters,fill = Median_Recommendation))+geom_bar(position = "dodge") + labs(
+  title = "Median_Recommendation vs cluster",
+  x= "cluster"
+) +
+  theme_bw()
+```
+```{r}
+ggplot(pharma_7,aes(x=silhouette_clusters,fill = Location))+ geom_bar(position = "dodge")
+labs(
+  title = "location vs cluster",
+  x = "Cluster"
+) +
+  theme_bw()
+```
+
+```{r}
+ggplot(pharma_7,aes(x=silhouette_clusters, fill = Exchange))+
+  geom_bar(position = "dodge")+
+  labs(
+    title = "exchange vs cluster",
+    x= "cluster"
+  )+
+  theme_bw()
+```
+I don't notice any distinct patterns with regard to the category variables because these aren't taken into account while creating the cluster, even though a pattern is an identifiable sequence. I can see, though, that the plots do lend themselves to certain observations.
+
+1. Looking at the median recommendation plot, I can see that Cluster 1 only has one "Strong Buy" recommendation and has a lot of "Hold" recommendations. All of the clusters have a distribution of moderate buy.
+2. I can see that all of the clusters have US-based enterprises from the Location vs. Cluster Plot. However, different places can be found throughout all clusters.
+3. It can be seen from the Exchange plot that 19 out of 21 companies are listed on the NYSE. There is no pattern provided by this variable.
+D) providing an appropriate name for each silhouestte cluster 
+
+1.cluster 1 is "Poorly Performing Pharma", has low performance across all features and extremely high BETA and Leverage values.
+2.cluster 2 "Overpriced Pharma", with a high PE ratio
+3.cluster 3 "Currently Profitable Pharma," which has the lowest revenue growth but a solid net profit margin.
+4."Big Pharma" is in Cluster 4, and it has high market capitalization, ROE, ROA, asset turnover, and net profit margin.
+5.The Sil Cluster 5 with the highest Rev Growth is "Future Potential Pharma."
+conclusion:
+Safety, income, and capital growth are the three characteristics that define any investment. Each investor must choose the right combination of these three elements.
+Investments are always constrained by their "profit to loss ratio," and any given investor would like to maximize profits with little to no loss. The cluster "Exorbitant Viability with Slighter Risk" in this data set exhibits all of these features. I believe that this can be the best cluster to choose for an investment given that there is a lower possibility of risk and better earnings, based on the study and interpretation done.
+Note: Choosing a cluster from the silhouette approach was made possible by the method's improved ability to define the domain.can be used by anyone to make an effective choice regarding their investing options.
